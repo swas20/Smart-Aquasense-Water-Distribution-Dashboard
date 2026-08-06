@@ -13,13 +13,11 @@ header{padding:12px 16px;background:var(--panel);border-bottom:1px solid var(--b
 .dot{width:9px;height:9px;border-radius:50%;display:inline-block;background:var(--red)}.dot.on{background:var(--accent);box-shadow:0 0 8px var(--accent)}
 .cfg{display:flex;gap:6px} .cfg input{background:var(--bg);border:1px solid var(--border);color:#fff;padding:6px 10px;border-radius:7px;font-size:0.7rem;width:170px}
 .cfg button{background:var(--blue);color:#fff;border:none;padding:6px 12px;border-radius:7px;font-weight:800;cursor:pointer}
-/* TOP SECTION - Monitor left, Diff right */
 .top-row{display:grid;grid-template-columns:380px 1fr;gap:14px;padding:14px;max-width:1400px;margin:auto}
 @media(max-width:900px){.top-row{grid-template-columns:1fr}}
 .diff-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .sum{background:linear-gradient(180deg,var(--card),var(--panel));border:1px solid var(--border);border-radius:12px;padding:14px}
 .sum-label{font-size:0.55rem;color:var(--muted);letter-spacing:1px}.sum-val{font-size:1.7rem;font-weight:800;margin-top:4px}
-/* CARDS */
 .card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden}
 .card.monitor{border:1.5px solid var(--blue);box-shadow:0 0 20px rgba(59,130,246,.15)}
 .head{display:flex;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border);font-weight:700}
@@ -31,7 +29,6 @@ header{padding:12px 16px;background:var(--panel);border-bottom:1px solid var(--b
 .customers{padding:0 14px 40px;max-width:1400px;margin:auto}
 .cust-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:14px;margin-top:14px}
 .empty{padding:50px;text-align:center;color:var(--muted);border:1px dashed var(--border);border-radius:12px}
-/* LOGIN */
 #login{position:fixed;inset:0;background:var(--bg);z-index:100;display:flex;align-items:center;justify-content:center}
 .login-box{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:28px;width:90%;max-width:360px}
 .login-box h2{color:var(--accent);margin-bottom:18px;text-align:center}
@@ -47,12 +44,11 @@ header{padding:12px 16px;background:var(--panel);border-bottom:1px solid var(--b
 </head>
 <body>
 
-<!-- LOGIN SCREEN -->
 <div id="login">
   <div class="login-box">
     <h2>AQUASENSE LOGIN</h2>
     <label>Account Name</label>
-    <input id="accName" type="text" placeholder="aquasense"/>
+    <input id="accName" type="text" placeholder="aquasense.hise"/>
     <label>Password</label>
     <div class="pass-wrap">
       <input id="accPass" type="password" placeholder="distribution2026"/>
@@ -76,9 +72,7 @@ header{padding:12px 16px;background:var(--panel);border-bottom:1px solid var(--b
 </header>
 
 <div class="top-row">
-  <!-- MONITOR LEFT -->
   <div id="monitorWrap"><div class="empty">Waiting for monitor</div></div>
-  <!-- DIFFERENTIAL RIGHT -->
   <div class="diff-grid">
     <div class="sum"><div class="sum-label">MONITOR TOTAL ID 0</div><div class="sum-val" style="color:var(--blue)" id="mon">0 L</div></div>
     <div class="sum"><div class="sum-label">CUSTOMERS TOTAL</div><div class="sum-val" style="color:var(--accent)" id="cust">0 L</div></div>
@@ -95,20 +89,18 @@ header{padding:12px 16px;background:var(--panel);border-bottom:1px solid var(--b
 <div id="toast"></div>
 
 <script>
-const ACC_NAME="aquasense";
-const ACC_NAME_SHORT="aquasense";
+const ACC_NAME="aquasense.hise";
+const ACC_SHORT="aquasense";
 const ACC_PASS="distribution2026";
-
-}
 
 function togglePass(){
   let p=document.getElementById('accPass');
   p.type = p.type==='password' ? 'text' : 'password';
 }
 function doLogin(){
-  let u=document.getElementById('accName').value.trim();
-  let pw=document.getElementById('accPass').value.trim();
-  if(u===ACC_NAME && pw===ACC_PASS){
+  let u=document.getElementById('accName').value.trim().toLowerCase();
+  let pw=document.getElementById('accPass').value.trim().toLowerCase();
+  if((u===ACC_NAME || u===ACC_SHORT) && pw===ACC_PASS){
     document.getElementById('login').style.display='none';
     localStorage.setItem('aqua_auth','1');
   }else{
