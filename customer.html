@@ -1,0 +1,60 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>AquaSense - My Water</title>
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+<style>body{background:#070b14;color:#e6edf7;font-family:monospace;display:flex;align-items:center;justify-content:center;min-height:100vh}.box{background:#101828;border:1px solid #1e2f52;padding:24px;border-radius:14px;width:92%;max-width:380px} input{width:100%;padding:10px;margin:6px 0;background:#070b14;border:1px solid #1e2f52;border-radius:8px;color:#fff} button{width:100%;padding:12px;background:#00e5b0;border:none;border-radius:8px;font-weight:800;margin-top:10px}.val{font-size:2.5rem;font-weight:800;color:#00e5b0}.badge{padding:4px 10px;border-radius:20px;font-size:0.7rem}</style>
+</head><body>
+<div class="box" id="loginBox"><h2>MY WATER ACCOUNT</h2><input id="id" placeholder="Customer ID e.g. 1"/><input id="pin" type="password" placeholder="PIN e.g. 1234"/><button onclick="login()">LOGIN</button><p style="font-size:0.65rem;color:#7b8ba5;margin-top:8px">Get ID & PIN from admin</p></div>
+<div class="box" id="dash" style="display:none"><h3 id="name">Customer</h3><div>Flow: <span class="val" id="flow">0.00</span> L/min</div><div>Total: <b id="total">0</b> L</div><div>Valve: <span id="valve" class="badge">--</span></div><hr style="margin:12px 0;border-color:#1e2f52"><div>Paid: <b id="paid">0</b> Ksh</div><div>Used: <b id="used">0</b> Ksh</div><div>Remaining: <b id="rem" style="color:#00e5b0">0</b> Ksh</div><button onclick="logout()">LOGOUT</button></div>
+<script>
+let TOPIC_BASE='aquasense/moses_kaaga_9x7p2';
+let mqttClient=null, timer=null;
+let cid='', cpin='';
+function login(){
+  cid=document.getElementById('id').value.trim(); cpin=document.getElementById('pin').value.trim();
+  if(!cid||!cpin) return alert('Enter ID & PIN');
+  // try local first then cloud
+  fetch(`https://your-render-backend-or-local-ip/api/customer_login?id=${cid}&pin=${cpin}`).then(r=>{
+    if(!r.ok) throw 'pin';
+    document.getElementById('loginBox').style.display='none';
+    document.getElementById('dash').style.display='block';
+    localStorage.setItem('cust_id',cid); localStorage.setItem('cust_pin',cpin);
+    start();
+  }).catch(()=>{ // fallback - for demo, check locally if you are on same WiFi, else allow if pin matches hardcoded for demo
+    // For REAL security, this check MUST be on ESP32 or your own backend, not here
+    if((cid=='1'&&cpin=='1234')||(cid=='2'&&cpin=='2345')||(cid=='3'&&cpin=='3456')){
+      document.getElementById('loginBox').style.display='none';
+      document.getElementById('dash').style.display='block';
+      localStorage.setItem('cust_id',cid); localStorage.setItem('cust_pin',cpin);
+      start();
+    } else alert('Wrong ID or PIN');
+  });
+}
+function start(){
+  connectMQTT();
+  pollLocal();
+  timer=setInterval(pollLocal,3000);
+}
+function pollLocal(){
+  fetch(`/api/customer_data?id=${cid}&pin=${cpin}`).then(r=>r.json()).then(render).catch(()=>{});
+  // if on Render, also try your local IP stored:
+  let local=localStorage.getItem('AQUA_LOCAL');
+  if(local) fetch(`${local}/api/customer_data?id=${cid}&pin=${cpin}`).then(r=>r.json()).then(render).catch(()=>{});
+}
+function connectMQTT(){
+  mqttClient=mqtt.connect('wss://broker.hivemq.com:8884/mqtt',{clientId:'cust_'+Math.random().toString(16).substr(2,6)});
+  mqttClient.on('connect',()=>{mqttClient.subscribe(TOPIC_BASE+'/node/'+cid);});
+  mqttClient.on('message',(t,m)=>{try{render(JSON.parse(m.toString()))}catch(e){}});
+}
+function render(d){
+  let n=d.node||d; if(!n) return;
+  document.getElementById('name').textContent=n.name||'Customer ID '+n.id;
+  document.getElementById('flow').textContent=parseFloat(n.flow||0).toFixed(2);
+  document.getElementById('total').textContent=n.total||0;
+  document.getElementById('valve').textContent=n.valve||'UNKNOWN';
+  document.getElementById('paid').textContent=n.paid||0;
+  document.getElementById('used').textContent=n.usedCost||0;
+  document.getElementById('rem').textContent=n.remaining||0;
+}
+function logout(){localStorage.clear();location.reload();}
+if(localStorage.getItem('cust_id')){cid=localStorage.getItem('cust_id');cpin=localStorage.getItem('cust_pin');document.getElementById('id').value=cid;document.getElementById('pin').value=cpin;document.getElementById('loginBox').style.display='none';document.getElementById('dash').style.display='block';start();}
+</script></body></html>
